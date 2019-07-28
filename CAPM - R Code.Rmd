@@ -1,0 +1,98 @@
+---
+title: "CAPM"
+author: "Omer Caliskan"
+date: "18/07/2019"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+install.packages("readxl", repos='http://cran.us.r-project.org')
+install.packages("kableExtra", repos='http://cran.us.r-project.org')
+library("readxl")
+library("kableExtra")
+```
+
+## Capital Asset Pricing Model
+
+CAPM is an important model in finance. It explains the variance of a security's rate of return as a function of rate of return on market portfolio, which consists of all publicly traded stocks.
+
+$r_{j}-r_{f}=\beta_{j}(r_{m}-r_{f})$
+
+$r_{j}$ and $r_{f}$ are the returns to chosen security and the risk-free rate, respectively. $r_{m}$ is the return on the market portfolio, and $\beta_{j}$ is the security's 'beta' value. It reveals the stock's volatility by measuring the sensitivity of the security's return to variation in the whole stock market.
+
+The rate of return on an investment is measured relative to its opportunity cost, which is the return on a risk-free asset. The difference is called the risk premium. That's why we include the return on risk-free asset in the model.
+
+A beta less than 1 indicates that stock is defensive since its variation is less than the market's. A beta greater than 1 indicates an aggressive stock.
+
+## Data
+
+The data file 'capm5' has the monthly returns of six firms (Microsoft, GE, IBM, GM, Disney, and Mobil-Exxon), the rate of return on the market portfolio (MKT), and the rate of return on the risk-free asset. The 180 observations cover from January 1980 to December 2012. 
+
+```{r message=FALSE, warning=FALSE}
+capm5 <- read_xlsx("C:\\Users\\omer\\Desktop\\Econ_425\\poe5xlsx\\capm5.xlsx", sheet=1)
+head(capm5)
+```
+
+## Analysis
+
+To be able to compare risk-premiums, rather than returns without including their opportunity costs, I will first create vectors for risk-premiums. Then, we can run linear regressions to compare each stocks return against market portfolio's.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# measure the risk-premium for market portfolio
+market_return <- capm5$mkt - capm5$riskfree
+
+# measure the risk-premium for each stock
+ge_return <- capm5$ge - capm5$riskfree
+ibm_return <- capm5$ibm - capm5$riskfree
+ford_return <- capm5$ford - capm5$riskfree
+msft_return <- capm5$msft - capm5$riskfree
+dis_return <- capm5$dis - capm5$riskfree
+xom_return <- capm5$xom - capm5$riskfree
+
+# build the model for each stock
+CAPM_ge = lm(ge_return~ 0+market_return, capm5)
+CAPM_ibm = lm(ibm_return~ 0+market_return, capm5)
+CAPM_ford = lm(ford_return~ 0+market_return, capm5)
+CAPM_msft = lm(msft_return~ 0+market_return, capm5)
+CAPM_dis = lm(dis_return~ 0+market_return, capm5)
+CAPM_xom = lm(xom_return~ 0+market_return, capm5)
+```
+
+## Plots
+
+Here are the plots to visualize the relationship between market's return and that of our stock's. Steepness of the lines indicate the responsiveness level of a stock to market's movements. The steeper the line the more aggressive the stock is.
+
+```{r}
+par(mfrow=c(2,3))
+plot(market_return, ge_return, xlab="GE", ylab="Market")
+abline(CAPM_ge, col="blue")
+plot(market_return, ibm_return, xlab="IBM", ylab="Market")
+abline(CAPM_ibm, col="blue")
+plot(market_return, ford_return, xlab="FORD", ylab="Market")
+abline(CAPM_ford, col="blue")
+plot(market_return, msft_return, xlab="MSFT", ylab="Market")
+abline(CAPM_msft, col="blue")
+plot(market_return, dis_return, xlab="DIS", ylab="Market")
+abline(CAPM_dis, col="blue")
+plot(market_return, xom_return, xlab="XOM", ylab="Market")
+abline(CAPM_xom, col="blue")
+```
+
+## Beta Values
+
+```{r echo=TRUE, message=TRUE, warning=FALSE}
+stocks <- c("ge", "ibm", "ford", "msft", "dis", "xom")
+beta_values <- c(coef(CAPM_ge)[[1]],coef(CAPM_ibm)[[1]] ,coef(CAPM_ford)[[1]] ,coef(CAPM_msft)[[1]] ,coef(CAPM_dis)[[1]] ,coef(CAPM_xom)[[1]])
+df <- data.frame(stocks,beta_values)
+kable(df, format = "html", caption = "Beta Values") %>%
+  kable_styling(bootstrap_options = "striped",
+                full_width = F) %>%
+  add_header_above(c(" ", ""))
+```
+According to the table, Ford is the most aggressive stock and Exxon-Mobile is the most defensive one.
+
